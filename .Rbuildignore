@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^rnaseq\.lf\.hypoxia\.molidustat\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
