@@ -1,0 +1,36 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# rnaseq.lf.hypoxia.molidustat
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+This package is a repository for lung fibroblast RNA-seq data obtained
+from cells treated with the prolyl hydroxylase inhibitors hypoxia and
+molidustat.
+
+## Installation
+
+You can install from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("wmoldham/rnaseq.lf.hypoxia.molidustat")
+```
+
+## Experiment
+
+Lung fibroblasts were seeded at a density of 150,000 cells per well on
+10-cm dishes and treated with 0.05% DMSO or 5 μM molidustat ± 0.5%
+oxygen. On the following day, the medium was changed and now included
+0.1% DMSO or 10 μM molidustat. Cells were incubated for three days prior
+to harvesting RNA. RNA was purified using the Zymo mini-prep kit and
+sent to BGI Genomics for sequencing. The samples were analyzed using
+their DNBSEQ platform with 100 bp paired end sequencing with greater
+than 20 M clean reads per sample. During quality control assessment,
+sample 11 was determined to be “risky” on the basis of a low 28S/18S
+ratio less than 1 and was associated with a RIN of 7 (compared to RIN
+scores of 9.8-10 for the remaining samples).
+
+## Data
