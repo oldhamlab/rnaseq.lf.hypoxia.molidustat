@@ -1,0 +1,219 @@
+---
+title: "DESeq2 Analysis"
+output:
+  html_document:
+    code_folding: hide
+vignette: >
+  %\VignetteIndexEntry{deseq-analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  messages = FALSE, 
+  warnings = FALSE, 
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+suppressPackageStartupMessages({
+  devtools::load_all()
+  # library(lf.hypoxia.molidustat.rnaseq)
+  library(tidyverse)
+  library(patchwork)
+  library(DESeq2)
+})
+
+conflicted::conflict_prefer("filter", "dplyr")
+conflicted::conflict_prefer("desc", "dplyr")
+conflicted::conflict_prefer("rename", "dplyr")
+```
+
+# Overview
+
+We observed that proliferating primary cells exposed to hypoxia do not increase glucose uptake and lactate efflux despite up-regulation of glucose transporters and glycolytic genes. When these cells are treated with the prolyl hydroxylase inhibitor molidustat in normoxia, the expected increases in glycolytic flux are observed. Interestingly, when molidustat-treated cells are cultured in hypoxia, hypoxia blocks molidustat-mediated increases in glycolysis. In an effort to identify the mechanism mediating this effect, we performed RNA-seq on lung fibroblasts treated for three days with 0.5% oxygen or molidustat (10 μM) with 21% and DMSO (0.1%) controls. RNA was collected and purified and sent for RNA-seq analysis.
+
+# Differentially regulated transcripts
+
+We will use the `DESeq2` package to identify differentially expresssed genes. We will use the model `~ oxygen * treatment`. 
+
+```{r}
+countData <- count_data 
+
+colData <- pheno_data
+
+design <- ~ oxygen * treatment
+
+dds <- 
+  DESeqDataSetFromMatrix(
+    countData = countData, 
+    colData = colData, 
+    design = design
+  )
+
+keep <- rowSums(counts(dds)) > 1
+dds <- dds[keep, ]
+```
+
+## Exploratory analysis
+
+### PCA
+
+```{r}
+vsd <- vst(dds, blind = FALSE)
+
+pca_data <- 
+  plotPCA(
+    vsd, 
+    intgroup = c("experiment", "oxygen", "treatment"), 
+    returnData = TRUE
+  )
+
+percent_variance <- round(100 * attr(pca_data, "percentVar"))
+
+ggplot(pca_data) + 
+  aes(x = PC1, y = PC2, color = interaction(oxygen, treatment, sep = " | ")) +
+  geom_point(aes(shape = factor(experiment)), size = 3) +
+  xlab(paste0("PC1: ", percent_variance[1], "% variance")) +
+  ylab(paste0("PC2: ", percent_variance[2], "% variance")) +
+  ggtitle("PCA") +
+  scale_color_brewer(palette = "Set1", name = "Group") +
+  scale_shape_discrete(name = "Experiment")
+```
+
+The PCA from the basic design indicates good separation among the four treatment groups. It also highlights some experiment-dependent effects in the biological replicates. We will build these into the model design as follows: `~ experiment + oxygen * treatment`. 
+
+```{r}
+design(dds) <- ~ experiment + oxygen * treatment
+```
+
+```{r}
+vsd <- vst(dds, blind = FALSE)
+assay(vsd) <- limma::removeBatchEffect(assay(vsd), vsd$experiment)
+
+pca_data <- 
+  plotPCA(
+    vsd, 
+    intgroup = c("experiment", "oxygen", "treatment"), 
+    returnData = TRUE
+  )
+
+percent_variance <- round(100 * attr(pca_data, "percentVar"))
+
+ggplot(pca_data) + 
+  aes(x = PC1, y = PC2, color = interaction(oxygen, treatment, sep = " | ")) +
+  geom_point(aes(shape = factor(experiment)), size = 3) +
+  xlab(paste0("PC1: ", percent_variance[1], "% variance")) +
+  ylab(paste0("PC2: ", percent_variance[2], "% variance")) +
+  ggtitle("PCA - Experiment effect removed") +
+  scale_color_brewer(palette = "Set1", name = "Group") +
+  scale_shape_discrete(name = "Experiment")
+```
+
+### Euclidean distance
+
+```{r}
+sample_distances <- dist(t(assay(vsd)))
+sample_distance_matrix <- as.matrix(sample_distances)
+
+ord <- hclust(sample_distances, method = "ward.D" )
+lvls <- sprintf("%02s", ord$order)
+
+segs <- ggdendro::dendro_data(ord)$segments
+labs <- 
+  ggdendro::dendro_data(ord)$labels %>% 
+  left_join(pheno_data, by = c("label" = "id"))
+
+
+a <- 
+  ggplot() +
+  geom_segment(
+    data = segs, 
+    aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(
+    data = labs, 
+    aes(x = x, y = y, color = interaction(oxygen, treatment, sep = " | ")),
+    size = 3
+  ) +
+  scale_y_reverse() +
+  coord_flip() +
+  theme_void() +
+  scale_color_brewer(palette = "Set1", name = "Group") +
+  theme(
+    legend.position = "bottom"
+  )
+
+df <- 
+  as_tibble(sample_distance_matrix, rownames = "sample_1") %>% 
+  pivot_longer(-sample_1, names_to = "sample_2", values_to = "corr") %>% 
+  left_join(pheno_data, by = c("sample_1" = "id")) %>% 
+  mutate(
+    sample_1 = factor(sample_1, levels = lvls), 
+    sample_2 = factor(sample_2, levels = lvls)
+  )
+
+b <- 
+  ggplot(df) +
+  aes(
+    x = reorder(sample_1, desc(sample_1)), 
+    y = sample_2, 
+    fill = corr
+  ) +
+  geom_tile(
+    show.legend = FALSE
+  ) +
+  coord_fixed() +
+  scale_fill_viridis_c() +
+  theme(
+    axis.title = element_blank()
+  )
+
+a + b +
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "bottom")
+```
+
+```{r}
+mds_data <- data.frame(cmdscale(sample_distance_matrix))
+mds <- cbind(mds_data, as.data.frame(colData(vsd)))
+
+ggplot(mds) + 
+  aes(x = X1, y = X2, color = interaction(oxygen, treatment, sep = " | ")) +
+  geom_point(aes(shape = factor(experiment)), size = 3) +
+  ggtitle("MDS - Euclidean distance") +
+  scale_color_brewer(palette = "Set1", name = "Group")
+```
+
+## Differential expression analysis
+
+```{r}
+dds <- DESeq(dds)
+```
+
+
+```{r}
+alpha <- 0.05
+fc <- 1
+```
+
+```{r}
+interaction <- 
+  results(
+    dds,  
+    alpha = alpha, 
+    lfcThreshold = log(fc, base = 2), 
+    tidy = TRUE, 
+    parallel = TRUE
+  ) %>% 
+  filter(padj <= alpha) %>% 
+  arrange(padj) %>% 
+  rename(entrez_id = row)
+
+interaction
+```
+
+
+

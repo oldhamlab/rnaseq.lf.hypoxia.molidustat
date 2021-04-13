@@ -1,0 +1,102 @@
+---
+title: "Alignment Summary"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Alignment Summary}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  out.width = "50%",
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+devtools::load_all()
+# library(rnaseq.lf.hypoxia.molidustat)
+library(tidyverse)
+```
+
+## Overview
+
+The RNA-seq data was aligned using the `Rsubread` package. Here are the summary
+statistics for the alignment quality.
+
+```{r calculate-summary-statistics}
+df <- 
+  rsubread_alignment_summary %>% 
+  dplyr::mutate(
+    index = 1:nrow(.), 
+    percent_mapped = mapped_fragments / total_fragments * 100,
+    percent_unique = uniquely_mapped_fragments / total_fragments * 100, 
+    percent_assigned = assigned / total_fragments * 100
+  ) 
+```
+
+#### Total fragments
+
+```{r total-fragments}
+ggplot(df) + 
+  aes(x = index, y = total_fragments / 1E6) +
+  geom_point() +
+  geom_text(
+    data = subset(df, total_fragments < 24.5E6), 
+    aes(x = index, y = total_fragments / 1E6, label = sample), 
+    nudge_y = 0.1
+  ) +
+  xlab("Sample") +
+  ylab("Total fragments (millions)") +
+  geom_hline(yintercept = mean(df$total_fragments) / 1E6, color = "blue") 
+```
+
+#### Mapped fragments
+
+```{r percent-mapped-fragments}
+ggplot(df) + 
+  aes(x = index, y = percent_mapped) +
+  geom_point() +
+  geom_text(
+    data = subset(df, percent_mapped < 98.25), 
+    aes(x = index, y = percent_mapped, label = sample), 
+    nudge_y = 0.01
+  ) +
+  xlab("Sample") +
+  ylab("Mapped fragments (percent of total)") +
+  geom_hline(yintercept = mean(df$percent_mapped), color = "blue") 
+```
+
+#### Uniquely mapped fragments
+
+```{r uniquely-mapped-fragments}
+ggplot(df) + 
+  aes(x = index, y = percent_unique) +
+  geom_point() +
+  geom_text(
+    data = subset(df, percent_unique < 84), 
+    aes(x = index, y = percent_unique, label = sample), 
+    nudge_y = 0.25
+  ) +
+  xlab("Sample") +
+  ylab("Uniquely mapped fragments (percent of total)") +
+  geom_hline(yintercept = mean(df$percent_unique), color = "blue") 
+```
+
+#### Assigned fragments
+
+```{r assigned-fragments}
+ggplot(df) + 
+  aes(x = index, y = percent_assigned) +
+  geom_point() +
+  geom_text(
+    data = subset(df, percent_assigned < 75), 
+    aes(x = index, y = percent_assigned, label = sample), 
+    nudge_y = 0.25
+  ) +
+  xlab("Sample") +
+  ylab("Assigned fragments (percent of total)") +
+  geom_hline(yintercept = mean(df$percent_assigned), color = "blue")
+```
