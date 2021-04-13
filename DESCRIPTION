@@ -32,3 +32,5 @@ Depends:
 VignetteBuilder: knitr
 Imports: 
     SummarizedExperiment
+URL: https://github.com/wmoldham/rnaseq.lf.hypoxia.molidustat
+BugReports: https://github.com/wmoldham/rnaseq.lf.hypoxia.molidustat/issues
