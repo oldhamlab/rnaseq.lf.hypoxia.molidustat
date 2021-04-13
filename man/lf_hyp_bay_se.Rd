@@ -13,7 +13,7 @@ lf_hyp_bay_se
 \description{
 RNA was harvested from proliferating lung fibroblasts after 72 h of treatment
 with molidustat or 0.5\% oxygen, separately or together with DMSO as the
-vehicle control. RNA was extracted using Qiagen RNAeasy kit and sequenced
+vehicle control. RNA was extracted using Qiagen RNeasy kit and sequenced
 at BGI.
 }
 \details{
