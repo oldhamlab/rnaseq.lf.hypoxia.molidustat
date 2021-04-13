@@ -77,7 +77,7 @@ pheno_data <-
     treatment = factor(treatment, levels = c("DMSO", "BAY"))
   )
 
-usethis::use_data(pheno_data, overwrite = TRUE)
+# usethis::use_data(pheno_data, overwrite = TRUE)
 
 
 # count data --------------------------------------------------------------
@@ -86,8 +86,46 @@ count_data <- feature_counts$counts
 colnames(count_data) <-
   stringr::str_extract(colnames(feature_counts$counts), pattern = ".*(?=_pe\\.bam)")
 
-usethis::use_data(count_data, overwrite = TRUE)
+# usethis::use_data(count_data, overwrite = TRUE)
 
+
+# annotation data ---------------------------------------------------------
+
+ensembl <-
+  biomaRt::useEnsembl(
+    biomart = "ensembl",
+    dataset = "hsapiens_gene_ensembl",
+    mirror = "useast"
+  )
+
+annots <-
+  biomaRt::getBM(
+    attributes = c(
+      "entrezgene_id",
+      "hgnc_symbol",
+      "description"
+    ),
+    filters = "entrezgene_id",
+    values = rownames(count_data),
+    mart = ensembl
+  )
+
+idx <- match(rownames(count_data), annots$entrezgene_id)
+feature_data <- data.frame(annots[idx, ], row.names = rownames(count_data))
+feature_data$entrezgene_id <- NULL
+feature_data$description <- stringr::str_extract(feature_data$description, "^.*(?= \\[)")
+
+
+# summarized experiment ---------------------------------------------------
+
+lf_hyp_bay_se <-
+  SummarizedExperiment::SummarizedExperiment(
+    assays = list(counts = count_data),
+    colData = pheno_data,
+    rowData = feature_data
+  )
+
+usethis::use_data(lf_hyp_bay_se, overwrite = TRUE)
 
 # alignment summary -------------------------------------------------------
 

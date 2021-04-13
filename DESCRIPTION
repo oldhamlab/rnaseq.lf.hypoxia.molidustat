@@ -14,12 +14,21 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.1.9001
 Suggests: 
+    conflicted,
+    DESeq2,
+    dplyr,
+    ggdendro,
     knitr,
+    limma,
+    patchwork,
     rmarkdown,
-    spelling
+    spelling,
+    tidyverse
 Language: en-US
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr
+Imports: 
+    SummarizedExperiment
