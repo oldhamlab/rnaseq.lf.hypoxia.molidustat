@@ -44,7 +44,7 @@ design <- ~ oxygen * treatment
 
 dds <- 
   DESeqDataSet(
-    lf_hyp_bay_se, 
+    lf_hyp_bay_rnaseq, 
     design = design
   )
 
@@ -119,7 +119,7 @@ lvls <- sprintf("%02s", ord$order)
 segs <- ggdendro::dendro_data(ord)$segments
 labs <- 
   ggdendro::dendro_data(ord)$labels %>% 
-  left_join(colData(lf_hyp_bay_se), by = c("label" = "id"), copy = TRUE)
+  left_join(colData(lf_hyp_bay_rnaseq), by = c("label" = "id"), copy = TRUE)
 
 
 a <- 
@@ -143,7 +143,7 @@ a <-
 df <- 
   as_tibble(sample_distance_matrix, rownames = "sample_1") %>% 
   pivot_longer(-sample_1, names_to = "sample_2", values_to = "corr") %>% 
-  left_join(colData(lf_hyp_bay_se), by = c("sample_1" = "id"), copy = TRUE) %>% 
+  left_join(colData(lf_hyp_bay_rnaseq), by = c("sample_1" = "id"), copy = TRUE) %>% 
   mutate(
     sample_1 = factor(sample_1, levels = lvls), 
     sample_2 = factor(sample_2, levels = lvls)
@@ -205,7 +205,7 @@ interaction <-
   filter(padj <= alpha) %>% 
   arrange(padj) %>% 
   rename(entrez_id = row) %>% 
-  left_join(as_tibble(rowData(lf_hyp_bay_se), rownames = "entrez_id"), by = "entrez_id") %>% 
+  left_join(as_tibble(rowData(lf_hyp_bay_rnaseq), rownames = "entrez_id"), by = "entrez_id") %>% 
   select(entrez_id, hgnc_symbol, description, everything())
 
 interaction

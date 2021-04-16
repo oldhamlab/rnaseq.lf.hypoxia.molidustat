@@ -49,7 +49,8 @@ Rsubread::align(
 
 bam_files <-
   list.files(
-    path = "data-raw/rsubread-bam",
+    # path = "data-raw/rsubread-bam",
+    path = "/Volumes/Elements/data_raw/rnaseq_lf_hypoxia_molidustat_BGI_2020/rsubread-bam/",
     pattern = "\\.bam$",
     full.names = TRUE
   )
@@ -59,7 +60,7 @@ feature_counts <-
     files = bam_files,
     annot.inbuilt = "hg38",
     isPairedEnd = TRUE,
-    nthreads = 14
+    nthreads = 1
   )
 
 
@@ -67,7 +68,7 @@ feature_counts <-
 
 pheno_data <-
   tibble::tibble(
-    id = sprintf("%02d", 1:16),
+    id = sprintf("S%02d", 1:16),
     experiment = rep(1:4, each = 4),
     oxygen = rep(c("21%", "0.5%"), 4, each = 2),
     treatment = rep(c("DMSO", "BAY"), 8)
@@ -84,7 +85,10 @@ pheno_data <-
 
 count_data <- feature_counts$counts
 colnames(count_data) <-
-  stringr::str_extract(colnames(feature_counts$counts), pattern = ".*(?=_pe\\.bam)")
+  stringr::str_c(
+    "S",
+    stringr::str_extract(colnames(feature_counts$counts), pattern = ".*(?=_pe\\.bam)")
+  )
 
 # usethis::use_data(count_data, overwrite = TRUE)
 
@@ -118,14 +122,14 @@ feature_data$description <- stringr::str_extract(feature_data$description, "^.*(
 
 # summarized experiment ---------------------------------------------------
 
-lf_hyp_bay_se <-
+lf_hyp_bay_rnaseq <-
   SummarizedExperiment::SummarizedExperiment(
     assays = list(counts = count_data),
     colData = pheno_data,
     rowData = feature_data
   )
 
-usethis::use_data(lf_hyp_bay_se, overwrite = TRUE)
+usethis::use_data(lf_hyp_bay_rnaseq, overwrite = TRUE)
 
 # alignment summary -------------------------------------------------------
 

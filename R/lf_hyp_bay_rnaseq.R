@@ -29,4 +29,4 @@
 #'   \item{hgnc_symbol}{gene symbol}
 #'   \item{description}{gene name}
 #' }
-"lf_hyp_bay_se"
+"lf_hyp_bay_rnaseq"
